@@ -1,5 +1,7 @@
 const { expect } = require("chai");
 
+const { ethers } = require("hardhat");
+
 describe("Vote contract", function () {
 
     let Vote;
@@ -17,11 +19,11 @@ describe("Vote contract", function () {
         await VoteContract.deployed();
     });
 
-    // describe("Deployment", () => {
-    //     it("Should set the right owner", async () => {
-    //         expect(await hardhatToken.owner()).to.equal(owner.address);
-    //     });
-    // });
+    describe("Deployment", () => {
+        it("Should set the right owner", async () => {
+            expect(await VoteContract.owner()).to.equal(owner.address);
+        });
+    });
 
     describe("Voting", () => {
         it("Can propose", async () => {
@@ -42,20 +44,22 @@ describe("Vote contract", function () {
             await VoteContract.propose('proposal0');
             await VoteContract.propose('proposal1');
             await VoteContract.vote(0);
-            const x = await VoteContract.endVote();
-            const y = await VoteContract.getProposals();
-            console.log('VoteContract.end(): ', x);
-            console.log('VoteContract.getProposals(): ', y);
-            // expect(await VoteContract.getProposals()[0].votesCount).to.equal(1);
 
-            // console.log('await VoteContract.getProposalVotesCount(0): ', await VoteContract.getProposalVotesCount(0));
-            // expect(await VoteContract.end()).to.equal([1, 0]);
+            const tx = await VoteContract.endVote();
+            const rc = await tx.wait();
+            const endVoteEvent = rc.events.find(event => event.event === 'VoteEnd');
+            expect(endVoteEvent.args[0].map(i => i.toNumber())).to.eql([1, 0]);
         });
-        xit("Can end and find winner when there're more than one", async () => {
+        it("Can end and find winners when there're more than one", async () => {
             await VoteContract.propose('proposal0');
             await VoteContract.propose('proposal1');
             await VoteContract.vote(0);
             await VoteContract.vote(1);
+
+            const tx = await VoteContract.endVote();
+            const rc = await tx.wait();
+            const endVoteEvent = rc.events.find(event => event.event === 'VoteEnd');
+            expect(endVoteEvent.args[0].map(i => i.toNumber())).to.eql([1, 1]);
         });
     });
 
