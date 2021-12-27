@@ -10,7 +10,7 @@ contract Vote {
     }
 
     Proposal[] public proposals;
-    address owner;
+    address public owner;
 
     constructor() {
         owner = msg.sender;
@@ -18,7 +18,7 @@ contract Vote {
 
     event ProposalSubmitted(address proposer, string content);
     event VoteOn(address voter, uint idx);
-    event VoteEnd();
+    event VoteEnd(uint[] winningProposals);
 
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -44,7 +44,7 @@ contract Vote {
                 winningProposals[i] = 1;
             }
         }
-        emit VoteEnd();
+        emit VoteEnd(winningProposals);
         return winningProposals;
     }
 
