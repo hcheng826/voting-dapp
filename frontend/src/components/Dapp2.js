@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
-import TokenArtifact from "../contracts/Token.json";
+import VoteArtifact from "../contracts/Vote.json";
 import contractAddress from "../contracts/contract-address.json";
 
 // All the logic of this dapp is contained in the Dapp component.
@@ -13,11 +13,10 @@ import contractAddress from "../contracts/contract-address.json";
 // logic. They just render HTML.
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
-import { Loading } from "./Loading";
-import { Transfer } from "./Transfer";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
-import { NoTokensMessage } from "./NoTokensMessage";
+import { ProposalBoard } from "./ProposalBoard";
+import { Propose } from "./Propose";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -37,18 +36,16 @@ const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
 // Note that (3) and (4) are specific of this sample application, but they show
 // you how to keep your Dapp and contract's state in sync,  and how to send a
 // transaction.
-export class Dapp extends React.Component {
+export class Dapp2 extends React.Component {
   constructor(props) {
     super(props);
 
     // We store multiple things in Dapp's state.
     // You don't need to follow this pattern, but it's an useful example.
     this.initialState = {
-      // The info of the token (i.e. It's Name and symbol)
-      tokenData: undefined,
+      proposals: [],
       // The user's address and balance
       selectedAddress: undefined,
-      balance: undefined,
       // The ID about transactions being sent, and any possible error with them
       txBeingSent: undefined,
       transactionError: undefined,
@@ -84,14 +81,14 @@ export class Dapp extends React.Component {
 
     // If the token data or the user's balance hasn't loaded yet, we show
     // a loading component.
-    if (!this.state.tokenData || !this.state.balance) {
-      return <Loading />;
-    }
+    // if (!this.state.tokenData || !this.state.balance) {
+    //   return <Loading />;
+    // }
 
     // If everything is loaded, we render the application.
     return (
       <div className="container p-4">
-        <div className="row">
+        {/* <div className="row">
           <div className="col-12">
             <h1>
               {this.state.tokenData.name} ({this.state.tokenData.symbol})
@@ -104,7 +101,7 @@ export class Dapp extends React.Component {
               .
             </p>
           </div>
-        </div>
+        </div> */}
 
         <hr />
 
@@ -135,26 +132,30 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             {/*
-              If the user has no tokens, we don't show the Tranfer form
-            */}
-            {this.state.balance.eq(0) && (
-              <NoTokensMessage selectedAddress={this.state.selectedAddress} />
-            )}
-
-            {/*
               This component displays a form that the user can use to send a
               transaction and transfer some tokens.
               The component doesn't have logic, it just calls the transferTokens
               callback.
             */}
-            {this.state.balance.gt(0) && (
-              <Transfer
-                transferTokens={(to, amount) =>
-                  this._transferTokens(to, amount)
+            {(
+              <Propose
+                submitProposal={(content) =>
+                  this._submitProposal(content)
                 }
-                tokenSymbol={this.state.tokenData.symbol}
               />
             )}
+          </div>
+        </div>
+
+        <div className="row">
+          <div className="col-12">
+              {this.state.proposals.length > 0 && (
+                <ProposalBoard
+                  voteOn={(idx) => this._submitVote(idx)}
+                  proposals={this.state.proposals}
+                />
+              )}
+
           </div>
         </div>
       </div>
@@ -219,7 +220,6 @@ export class Dapp extends React.Component {
     // Fetching the token data and the user's balance are specific to this
     // sample project, but you can reuse the same initialization pattern.
     this._intializeEthers();
-    this._getTokenData();
     this._startPollingData();
   }
 
@@ -229,9 +229,9 @@ export class Dapp extends React.Component {
 
     // When, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
-    this._token = new ethers.Contract(
+    this._vote = new ethers.Contract(
       contractAddress.Contract,
-      TokenArtifact.abi,
+      VoteArtifact.abi,
       this._provider.getSigner(0)
     );
   }
@@ -244,10 +244,10 @@ export class Dapp extends React.Component {
   // don't need to poll it. If that's the case, you can just fetch it when you
   // initialize the app, as we do with the token data.
   _startPollingData() {
-    this._pollDataInterval = setInterval(() => this._updateBalance(), 1000);
+    this._pollDataInterval = setInterval(() => this._updateProposals(), 1000);
 
     // We run it once immediately so we don't have to wait for it
-    this._updateBalance();
+    this._updateProposals();
   }
 
   _stopPollingData() {
@@ -255,24 +255,26 @@ export class Dapp extends React.Component {
     this._pollDataInterval = undefined;
   }
 
-  // The next two methods just read from the contract and store the results
-  // in the component state.
-  async _getTokenData() {
-    const name = await this._token.name();
-    const symbol = await this._token.symbol();
-
-    this.setState({ tokenData: { name, symbol } });
+  async _updateProposals() {
+    const proposals = await this._vote.getProposals();
+    this.setState({ proposals });
   }
 
-  async _updateBalance() {
-    const balance = await this._token.balanceOf(this.state.selectedAddress);
-    this.setState({ balance });
+  async _submitProposal(content) {
+    let submitProposalPromise = this._vote.propose(content);
+    this._sendTx(submitProposalPromise);
+  }
+
+  async _submitVote(idx) {
+    // console.log(idx);
+    let votePromise = this._vote.vote(idx);
+    this._sendTx(votePromise);
   }
 
   // This method sends an ethereum transaction to transfer tokens.
   // While this action is specific to this application, it illustrates how to
   // send a transaction.
-  async _transferTokens(to, amount) {
+  async _sendTx(txPromise) {
     // Sending a transaction is a complex operation:
     //   - The user can reject it
     //   - It can fail before reaching the ethereum network (i.e. if the user
@@ -288,13 +290,13 @@ export class Dapp extends React.Component {
 
     try {
       // If a transaction fails, we save that error in the component's state.
-      // We only save one such error, so before sending a second transaction, we
+      // We only save one such error, so beError sending transactionfore sending a second transaction, we
       // clear it.
       this._dismissTransactionError();
 
       // We send the transaction, and save its hash in the Dapp's state. This
       // way we can indicate that we are waiting for it to be mined.
-      const tx = await this._token.transfer(to, amount);
+      const tx = await txPromise;
       this.setState({ txBeingSent: tx.hash });
 
       // We use .wait() to wait for the transaction to be mined. This method
@@ -310,7 +312,7 @@ export class Dapp extends React.Component {
 
       // If we got here, the transaction was successful, so you may want to
       // update your state. Here, we update the user's balance.
-      await this._updateBalance();
+      await this._updateProposals();
     } catch (error) {
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.
@@ -343,9 +345,10 @@ export class Dapp extends React.Component {
   // message.
   _getRpcErrorMessage(error) {
     if (error.data) {
+      // console.log(error.data.message);
       return error.data.message;
     }
-
+    // console.log(error.message);
     return error.message;
   }
 
