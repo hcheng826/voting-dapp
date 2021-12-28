@@ -30,11 +30,11 @@ task("faucet", "Sends ETH and tokens to an address")
       return;
     }
 
-    const token = await ethers.getContractAt("Token", address.Contract);
+    // const token = await ethers.getContractAt("Token", address.Contract);
     const [sender] = await ethers.getSigners();
 
-    const tx = await token.transfer(receiver, 100);
-    await tx.wait();
+    // const tx = await token.transfer(receiver, 100);
+    // await tx.wait();
 
     const tx2 = await sender.sendTransaction({
       to: receiver,
@@ -42,5 +42,5 @@ task("faucet", "Sends ETH and tokens to an address")
     });
     await tx2.wait();
 
-    console.log(`Transferred 1 ETH and 100 tokens to ${receiver}`);
+    console.log(`Transferred 1 ETH to ${receiver}`);
   });

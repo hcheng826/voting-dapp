@@ -1,6 +1,6 @@
 // This is a script for deploying your contracts. You can adapt it to deploy
 // yours, or create new ones.
-CONTRACT_NAME = "Token";
+CONTRACT_NAME = "Vote";
 
 async function main() {
   // This is just a convenience check
