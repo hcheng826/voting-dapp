@@ -10,7 +10,9 @@ contract Vote {
     }
 
     Proposal[] public proposals;
+    // mapping(address => bool[]) public voted;
     address public owner;
+    bool public isEnded = false;
 
     constructor() {
         owner = msg.sender;
@@ -21,7 +23,7 @@ contract Vote {
     event VoteEnd(uint[] winningProposals);
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Only contract owner can call this function");
         _;
     }
 
@@ -31,6 +33,7 @@ contract Vote {
     }
 
     function vote(uint256 _idx) public {
+        // require(voted[msg.sender][_idx] == false, "Already voted. An address can only vote once");
         proposals[_idx].votesCount += 1;
         emit VoteOn(msg.sender, _idx);
     }
@@ -45,7 +48,13 @@ contract Vote {
             }
         }
         emit VoteEnd(winningProposals);
+        isEnded = true;
         return winningProposals;
+    }
+
+    function clearProposals() public onlyOwner {
+        require(isEnded, "Can only clear proposals after the voting is ended.");
+        delete proposals;
     }
 
     function getMaxVotesCount() private view returns (uint) {

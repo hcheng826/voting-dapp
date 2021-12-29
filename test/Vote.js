@@ -61,6 +61,24 @@ describe("Vote contract", function () {
             const endVoteEvent = rc.events.find(event => event.event === 'VoteEnd');
             expect(endVoteEvent.args[0].map(i => i.toNumber())).to.eql([1, 1]);
         });
+        it("Block non-owner from ending the vote", async () => {
+            await VoteContract.propose('proposal0');
+            await VoteContract.propose('proposal1');
+            await VoteContract.vote(0);
+
+            await expect(VoteContract.connect(addr1).endVote())
+                .to.be.revertedWith("Only contract owner can call this function");
+        });
+        it("Can clear proposals", async () => {
+            await VoteContract.propose('proposal0');
+            await VoteContract.propose('proposal1');
+            await VoteContract.vote(0);
+
+            await VoteContract.endVote();
+            await VoteContract.clearProposals();
+            const proposals = await VoteContract.getProposals();
+            expect(proposals.length).to.equal(0);
+        });
     });
 
 });
