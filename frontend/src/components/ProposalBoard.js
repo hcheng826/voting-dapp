@@ -1,6 +1,6 @@
 import React from "react";
 
-export function ProposalBoard({ voteOn, proposals }) {
+export function ProposalBoard({ voteOn, proposals, isEnded }) {
     return (
         <div>
             <h4>Proposal Leaderboard</h4>
@@ -21,7 +21,8 @@ export function ProposalBoard({ voteOn, proposals }) {
                         <th>{proposals[idx].content}</th>
                         <th>{proposals[idx].votesCount.toNumber()}</th>
                         <th>
-                          <input className="btn btn-primary" type="submit" value="Vote!" onClick={() => { voteOn(idx) }}/>
+                          { !isEnded && (<input className="btn btn-primary" type="submit" value="Vote!" onClick={() => { voteOn(idx) }}/>) }
+                          { isEnded && (<input className="btn btn-primary" type="submit" value="Vote!" disabled/>) }
                         </th>
                       </tr>
                     )

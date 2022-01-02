@@ -45,6 +45,7 @@ export class Dapp2 extends React.Component {
     // You don't need to follow this pattern, but it's an useful example.
     this.initialState = {
       proposals: [],
+      isEnded: false,
       // The user's address and balance
       selectedAddress: undefined,
       // The ID about transactions being sent, and any possible error with them
@@ -143,6 +144,7 @@ export class Dapp2 extends React.Component {
                 submitProposal={(content) =>
                   this._submitProposal(content)
                 }
+                isEnded={this.state.isEnded}
               />
             )}
           </div>
@@ -154,6 +156,7 @@ export class Dapp2 extends React.Component {
                 <ProposalBoard
                   voteOn={(idx) => this._submitVote(idx)}
                   proposals={this.state.proposals}
+                  isEnded={this.state.isEnded}
                 />
               )}
           </div>
@@ -161,7 +164,8 @@ export class Dapp2 extends React.Component {
 
         <div className="row">
           <div className="col-12">
-            <input className="btn btn-primary" type="submit" value="End Vote" onClick={() => { this._endVote() }}/>
+            {!this.state.isEnded && <input className="btn btn-primary" type="submit" value="End Vote" onClick={() => { this._endVote() }}/>}
+            {this.state.isEnded && <input className="btn btn-primary" type="submit" value="End Vote" disabled/>}
           </div>
         </div>
 
@@ -175,11 +179,12 @@ export class Dapp2 extends React.Component {
           </div>
         </div>
 
-        {/* <div className="row">
+        <div className="row">
           <div className="col-12">
-            <input className="btn btn-primary" type="submit" value="Reset" onClick={() => { this._endVote() }}/>
+            { this.state.isEnded && <input className="btn btn-primary" type="submit" value="Reset" onClick={() => { this._resetVote() }}/>}
+            { !this.state.isEnded && <input className="btn btn-primary" type="submit" value="Reset" disabled/>}
           </div>
-        </div> */}
+        </div>
 
       </div>
     );
@@ -280,18 +285,18 @@ export class Dapp2 extends React.Component {
 
   async _updateProposals() {
     const proposals = await this._vote.getProposals();
-    this.setState({ proposals });
+    const isEnded = await this._vote.isEnded();
+    this.setState({ proposals, isEnded });
   }
 
   async _submitProposal(content) {
     let submitProposalPromise = this._vote.propose(content);
-    this._sendTx(submitProposalPromise);
+    await this._sendTx(submitProposalPromise);
   }
 
   async _submitVote(idx) {
-    // console.log(idx);
     let votePromise = this._vote.vote(idx);
-    this._sendTx(votePromise);
+    await this._sendTx(votePromise);
   }
 
   async _endVote() {
@@ -307,6 +312,12 @@ export class Dapp2 extends React.Component {
         if(v) { winningProposals.push(idx); }
       })
     this.setState({ winningProposals });
+  }
+
+  async _resetVote() {
+    let resetVotePromise = this._vote.clearProposals();
+    await this._sendTx(resetVotePromise);
+    this._resetVotingState();
   }
 
   // This method sends an ethereum transaction to transfer tokens.
@@ -394,6 +405,14 @@ export class Dapp2 extends React.Component {
   // This method resets the state
   _resetState() {
     this.setState(this.initialState);
+  }
+
+  _resetVotingState() {
+    this.setState({
+      isEnded: false,
+      proposals: [],
+      winningProposals: undefined,
+    })
   }
 
   // This method checks if Metamask selected network is Localhost:8545

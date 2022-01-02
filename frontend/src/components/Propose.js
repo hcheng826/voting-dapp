@@ -1,6 +1,6 @@
 import React from "react";
 
-export function Propose({ submitProposal }) {
+export function Propose({ submitProposal, isEnded }) {
   return (
     <div>
       <h4>Propose</h4>
@@ -28,7 +28,8 @@ export function Propose({ submitProposal }) {
           />
         </div>
         <div className="form-group">
-          <input className="btn btn-primary" type="submit" value="Propose" />
+          {!isEnded && <input className="btn btn-primary" type="submit" value="Propose" />}
+          {isEnded && <input className="btn btn-primary" type="submit" value="Propose" disabled/>}
         </div>
       </form>
     </div>

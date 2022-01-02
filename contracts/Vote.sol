@@ -55,6 +55,7 @@ contract Vote {
     function clearProposals() public onlyOwner {
         require(isEnded, "Can only clear proposals after the voting is ended.");
         delete proposals;
+        isEnded = false;
     }
 
     function getMaxVotesCount() private view returns (uint) {
