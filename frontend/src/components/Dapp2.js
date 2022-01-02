@@ -14,6 +14,7 @@ import contractAddress from "../contracts/contract-address.json";
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
+import { SuccessMessage } from "./SuccessStatus";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { ProposalBoard } from "./ProposalBoard";
 import { Propose } from "./Propose";
@@ -155,9 +156,31 @@ export class Dapp2 extends React.Component {
                   proposals={this.state.proposals}
                 />
               )}
-
           </div>
         </div>
+
+        <div className="row">
+          <div className="col-12">
+            <input className="btn btn-primary" type="submit" value="End Vote" onClick={() => { this._endVote() }}/>
+          </div>
+        </div>
+
+        <div className="row">
+          <div className="col-12">
+              {this.state.winningProposals && this.state.winningProposals.length > 0 && (
+                <SuccessMessage
+                  message={`Voting ends. Winning proposals: proposal ${this.state.winningProposals}.`}
+                />
+              )}
+          </div>
+        </div>
+
+        {/* <div className="row">
+          <div className="col-12">
+            <input className="btn btn-primary" type="submit" value="Reset" onClick={() => { this._endVote() }}/>
+          </div>
+        </div> */}
+
       </div>
     );
   }
@@ -271,6 +294,21 @@ export class Dapp2 extends React.Component {
     this._sendTx(votePromise);
   }
 
+  async _endVote() {
+    let endVotePromise = this._vote.endVote();
+    let endVoteReceipt = await this._sendTx(endVotePromise);
+    if (this.state.transactionError) {
+      return;
+    }
+    const endVoteEvent = endVoteReceipt.events.find(event => event.event === 'VoteEnd');
+    let winningProposals = [];
+    endVoteEvent.args[0].map(i => i.toNumber())
+      .forEach((v, idx) => {
+        if(v) { winningProposals.push(idx); }
+      })
+    this.setState({ winningProposals });
+  }
+
   // This method sends an ethereum transaction to transfer tokens.
   // While this action is specific to this application, it illustrates how to
   // send a transaction.
@@ -313,6 +351,7 @@ export class Dapp2 extends React.Component {
       // If we got here, the transaction was successful, so you may want to
       // update your state. Here, we update the user's balance.
       await this._updateProposals();
+      return receipt;
     } catch (error) {
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.

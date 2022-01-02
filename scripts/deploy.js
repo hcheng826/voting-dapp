@@ -2,6 +2,8 @@
 // yours, or create new ones.
 CONTRACT_NAME = "Vote";
 
+const secrets = require('../secrets.json');
+
 async function main() {
   // This is just a convenience check
   if (network.name === "hardhat") {
@@ -13,7 +15,8 @@ async function main() {
   }
 
   // ethers is avaialble in the global scope
-  const [deployer] = await ethers.getSigners();
+  // const [deployer] = await ethers.getSigners();
+  const deployer = new ethers.Wallet(`0x${secrets.ACCOUNT_DEV_PRIVATE_KEY}`, new ethers.providers.JsonRpcProvider());
   console.log(
     "Deploying the contracts with the account:",
     await deployer.getAddress()
@@ -21,11 +24,11 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const Contract = await ethers.getContractFactory(CONTRACT_NAME);
+  const Contract = await ethers.getContractFactory(CONTRACT_NAME, deployer);
   const contract = await Contract.deploy();
   await contract.deployed();
 
-  console.log(`${CONTRACT_NAME} address:`, contract.address);
+  console.log(`${CONTRACT_NAME} contract address:`, contract.address);
 
   // We also save the contract's artifacts and address in the frontend directory
   saveFrontendFiles(contract);
