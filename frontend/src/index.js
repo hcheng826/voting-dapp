@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { Dapp } from "./components/Dapp";
 import { Dapp2 } from "./components/Dapp2";
 
 // We import bootstrap here, but you can remove if you want
