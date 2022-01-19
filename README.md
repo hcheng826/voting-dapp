@@ -6,9 +6,9 @@ The Dapp is a voting app that allows users to propose their content and vote whi
 
 ![image](https://user-images.githubusercontent.com/23033847/147917938-a7dbfd1c-1f9c-4dd4-a2a8-c9f0da805cff.png)
 
-![image](https://user-images.githubusercontent.com/23033847/147918060-4745b83a-d51a-47b9-94c4-91f9012a71c3.png)
-
 ![image](https://user-images.githubusercontent.com/23033847/147917867-175ad7b4-fb14-4eab-a92e-7d6273f31811.png)
+
+![image](https://user-images.githubusercontent.com/23033847/147918060-4745b83a-d51a-47b9-94c4-91f9012a71c3.png)
 
 ## Quick start
 
